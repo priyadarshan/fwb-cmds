@@ -35,29 +35,43 @@
 ;; This library can be used by itself but was written as a helper
 ;; library for library `bob.el'.
 
+;;; TODO:
+
+;; There is frame local `buffer-list' but not a window local one, so we
+;; can not determine whether a window was previously displaying another
+;; buffer.  Therefor it is not possible to delete only windows displaying
+;; buffer which should be deleted that did not previously display another
+;; buffer (in which case the previous buffer should be shown instead.)
+
+;; We need some other way to record the buffer history of a window.
+;; Since `set-window-buffer' always used to set the buffer and it uses
+;; `window-configuration-change-hook' this can be done by recording
+;; buffers in the window-parameters.
+
 ;;; Code:
 
 (require 'frame-cmds)
 (require 'misc-cmds)
 
-(defun kill-this-buffer-and-its-windows (&optional only-current-p)
-  "Kill current buffer and delete its windows."
+;; (defun record-window-buffer-history ()
+;;   )
+
+;; (add-hook 'window-configuration-change-hook 'record-window-buffer-history)
+;; (remove-hook 'window-configuration-change-hook 'record-window-buffer-history)
+
+(defun kill-this-buffer-and-its-windows ()
+  "Kill the current buffer and delete its windows."
   (interactive)
   (kill-buffer-and-its-windows (current-buffer)))
-;; TODO should optionally only delete current window
-;;      interactively this should be controlled by a external variable
 
 (defun kill-other-buffers-in-frame-and-their-windows ()
-  "Kill all buffers showing in the current frame \
-but the current and their window.
+  "Kill all buffers showing in the current frame but the current and their window.
 Only buffers are considered that have a window in the current frame."
 (interactive)
 (dolist (win (window-list nil "not"))
   (unless (equal win (selected-window))
     (kill-buffer (window-buffer win))
     (old-delete-window win))))
-;; XXX very unfinished
-;;     see kill-buffer-and-its-windows
 
 (defun kill-other-buffers-in-frame()
   "Kill all buffers but the current.  Windows are preserved.
@@ -66,11 +80,6 @@ Only buffers are considered that have a window in the current frame."
 (dolist (win (window-list nil "not"))
   (unless (equal win (selected-window))
     (kill-buffer (window-buffer win)))))
-;; XXX very unfinished
-;;     see kill-buffer-and-its-windows
-
-;; TODO
-;; (defun delete-other-windows-on (buffer))
 
 (defun delete-other-windows-for (buffer)
   "Delete all windows in all frames showing BUFFER."
@@ -124,17 +133,10 @@ Only buffers are considered that have a window in the current frame."
   (interactive)
   (switch-to-buffer-other-frame "*Scratch*"))
 
-;; XXX This gives the same result as split-window-vertically
-;;     However split-window-horizontally doesnt make sence with wmii;
-;;     so i favor this name.  Other new commands in this category
-;;     could be:
-;;     * new-window-previous-buffer
-;;     If this isnt done the new-window-current-buffer should only
-;;     be an alias for split-window-vertically
 (defun new-window-current-buffer ()
   "Create new window with current buffer."
   (interactive)
-  (switch-to-buffer-other-window "*Scratch*"))
+  (switch-to-buffer-other-window (current-buffer)))
 
 (defun new-window-scratch-buffer ()
   "Create new window with buffer *Scratch*."
